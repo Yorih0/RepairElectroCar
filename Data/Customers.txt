@@ -1,0 +1,1 @@
+{'action': 'create_customer', 'Customer_name': 'Uee', 'Car_model': 'Mazda 5', 'Car_vin': '5555', 'page': 'customer'}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="css/admin_register.css">
+</head>
+<body>
+    <center>
+        <h2>Страница Админа</h2>
+        <!-- Форма создания предприятия -->
+        <form action="/cretor_of_base_data" method="post">
+        <input type="hidden" name="action" value="cretor_of_base_data">
+            <table>
+                <tr>
+                    <th><label for="Name_of_base_data">Название предприятия</label></th>
+                    <th><input id="Name_of_base_data" name="Name_of_base_data" type="text" required></th>
+                </tr>
+                <tr>
+                    <th><label for="">Login</label></th>
+                    <th><input id="" name="Login" type="text" required></th>
+                </tr>
+                <tr>
+                    <th><label for="Password">Password</label></th>
+                    <th><input id="Password" name="Password" type="password" required></th>
+                </tr>
+                <tr>
+                    <th><label for="Password_Repeat">Repeat</label></th>
+                    <th><input id="Password_Repeat" name="Password_Repeat" type="password" required></th>
+                </tr>
+                <tr>
+                    <th><button type="submit" name="page" value="Cretor_of_base_data">Создать</button></th>
+                </tr>
+            </table>
+        </form>
+        <hr>
+    </center>
+</body>
+</html>

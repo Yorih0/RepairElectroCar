@@ -8,22 +8,30 @@
 <body>
     <center>
         <h1>Форма Регистрация</h1>
-        <form action="/request" method="post">
+        <form action="/Registed" method="post">
             <table>
                 <tr>
-                    <th><label for="email">Почта</label></th>
-                    <th><input id="email" name="email" type="email" required></th>
+                    <th><label for="Login">Логин</label></th>
+                    <th><input id="Login" name="Login" type="text" required></th>
                 </tr>
                 <tr>
-                    <th><label for="password1">Пароль</label></th>
-                    <th><input id="password1" name="password1" type="password" required></th>
+                    <th><label for="Password">Пароль</label></th>
+                    <th><input id="Password" name="Password" type="password" required></th>
                 </tr>
                 <tr>
-                    <th><label for="password2">Новый пароль</label></th>
-                    <th><input id="password2" name="password2" type="password" required></th>
+                    <th><label for="Password_Repeat">Повтор пароля</label></th>
+                    <th><input id="Password_Repeat" name="Password_Repeat" type="password" required></th>
+                </tr>
+                <tr>
+                    <th><label for="Mail">Почта</label></th>
+                    <th><input id="Mail" name="Mail" type="email" required></th>
+                </tr>
+                <tr>
+                    <th><label for="Phone">Телефон</label></th>
+                    <th><input id="Phone" name="Phone" type="tel" required></th>
                 </tr>
             </table>
-            <button type="submit" name="action" value="register">Вход</button>
+            <button type="submit" name="action" value="registed">Вход</button>
         </form>
     </center>
 </body>

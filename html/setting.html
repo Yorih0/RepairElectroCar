@@ -8,22 +8,20 @@
 <body>
     <center>
     <p>страница настроек и страниц</p>
-    <form action="/request" method="post">
+    <form action="html" method="post">
+    <input type="hidden" name="action" value="html">
     <table>
         <tr>
-            <th><button type="submit" name="action" value="main">Главная страница</button></th>
+            <th><button type="submit" name="name_page" value="main">Главная страница</button></th>
         </tr>
         <tr>
-            <th><button type="submit" name="action" value="login">Вход</button></th>
+            <th><button type="submit" name="name_page" value="admin_data"> Cтраница админа</button></th>
         </tr>
         <tr>
-            <th><button type="submit" name="action" value="register">Регистрация</button></th>
+            <th><button type="submit" name="name_page" value="login">Вход</button></th>
         </tr>
         <tr>
-            <th><button type="submit" name="action" value="reload">Перезагрузка</button></th>
-        </tr>
-        <tr>
-            <th><button type="submit" name="action" value="off">Выключение</button></th>
+            <th><button type="submit" name="name_page" value="register">Регистрация</button></th>
         </tr>
     </table>
     </form>
