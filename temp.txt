@@ -1,0 +1,17 @@
+    // function createCookie() {
+    //   const value = encodeURIComponent(Math.random().toString(36).slice(2));
+    //   // Создаём куку на 31 день
+    //   document.cookie = `hashkey=${value}; path=/; max-age=${60 * 60 * 24 * 31}`;
+    //   renderAuthBlock();
+    // }
+
+
+                # # Получаем ID только что добавленного пользователя
+            # user_id = cursor.lastrowid
+            
+            # # Добавляем автомобиль пользователя
+            # cursor.execute("""INSERT INTO customers (user_id, car_model, car_vin) 
+            #                 VALUES (?, ?, ?)""",
+            #             (user_id, self.car_model, self.car_vin))
+            
+            # Фиксируем транзакцию

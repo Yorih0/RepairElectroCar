@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <title>Форма входа</title>
+</head>
+<body>
+    <h1>Форма входа</h1>
+    <label for="login">Логин</label>
+    <input id="login" name="login" type="text" >
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password" >
+
+    <div id="btn_login"></div>
+    <div id="btn_register"></div>
+    <div id="btn_back"></div>
+
+    <script src="General.js">
+        document.addEventListener("DOMContentLoaded", View_btns);
+
+        function View_btns() 
+        {
+            const containerLogin = document.getElementById("btn_login")
+            const containerRegister = document.getElementById("btn_register")
+            const containerBack = document.getElementById("btn_back")
+
+            containerLogin.innerHTML = "";
+            containerRegister.innerHTML ="";
+            containerBack.innerHTML = "";
+
+            const hashkey = getHashkeyCookie();
+
+            renderButtons(
+            [
+                {
+                    containerId: "btn_login",
+                    className: "btn-login",
+                    text: "Вход",
+                    onclick:Login
+                },
+                {
+                    containerId: "btn_register",
+                    className: "btn-register",
+                    text: "Регистрация",
+                    onclick:Register
+                },
+                {
+                    containerId: "btn_register",
+                    className: "btn-back",
+                    text: "Назад",
+                    onClick: () => submitForm("/", {hashkey:hashkey, action: "html", name_page: "main" })
+                }
+            ]
+            )
+        }
+        function Login() 
+        {
+            const loginValue = document.getElementById("login").value.trim();
+            const passwordValue = document.getElementById("password").value;
+
+            if (!loginValue || loginValue.length < 4) {
+                showToast("Логин должен содержать минимум 4 символа!", "warning");
+                return;
+            }
+            
+            if (!passwordValue || passwordValue.length < 4) {
+                showToast("Пароль должен содержать минимум 4 символа!", "warning");
+                return;
+            }
+
+            submitForm("/Main", {
+                action: "login",
+                login: loginValue,
+                password: passwordValue
+            });
+        }
+        function Register() 
+        {
+            submitForm("/Reg", {
+                action: "html",
+                name_page: "register"
+            });
+        }
+        function Back() 
+        {
+            submitForm("/Main", {
+                action: "html",
+                name_page: "main"
+            });
+        }
+    </script>
+</body>
+</html>

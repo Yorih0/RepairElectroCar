@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Главная страница сайта</title>
+  <link rel="stylesheet" href="css/toast.css">
+</head>
+<body>
+  <p>Главный экран</p>
+  <div id="Choose_Enter_or_Login"></div>
+  <div id="btn_exit"></div>
+  <div id="btn_order"></div>
+
+  <script src="General.js">
+    document.addEventListener("DOMContentLoaded", View_btns);
+
+    function View_btns() 
+	{
+      const containerLogin = document.getElementById("Choose_Enter_or_Login");
+      const containerExit = document.getElementById("btn_exit");
+      const containerOrder = document.getElementById("btn_order");
+
+      containerLogin.innerHTML = "";
+      containerExit.innerHTML = "";
+      containerOrder.innerHTML = "";
+
+      const hashkey = getHashkeyCookie();
+
+      if (hashkey) 
+	  {
+        showToast("Авто вход", "success");
+        renderButtons([
+          {
+            containerId: "Choose_Enter_or_Login",
+            className: "btn-profile",
+            text: "Профиль",
+            onClick: () => submitForm("/profile", {hashkey:hashkey, action: "html", name_page: "profile" })
+          },
+          {
+            containerId: "btn_exit",
+            className: "btn-exit",
+            text: "Выйти",
+            onClick: Exit
+          }
+        ]);
+      } 
+	  else 
+	  {
+        showToast("Войдите в акк", "info");
+        renderButtons([
+          {
+            containerId: "Choose_Enter_or_Login",
+            className: "btn-login",
+            text: "Вход",
+            onClick: () => submitForm("/login", {hashkey:hashkey, action: "html", name_page: "login" })
+          }
+        ]);
+      }
+      renderButtons([
+        {
+          containerId: "btn_order",
+          className: "btn-create-order",
+          text: "Создать заявку",
+          onClick: () => submitForm("/order", {hashkey:hashkey, action: "html", name_page: "order" })
+        }
+      ]);
+    }
+    function Exit() {
+      document.cookie = "hashkey=; path=/; max-age=0";
+      View_btns();
+    }
+  </script>
+</body>
+</html>

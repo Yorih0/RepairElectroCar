@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <title>Форма входа</title>
+</head>
+<body>
+    <h1>Форма входа</h1>
+    <label for="car_model">Марка и модель авто</label>
+    <input id="car_model" name="car_model" type="text" >
+    <label for="car_vin">Вин номер авто</label>
+    <input id="car_vin" name="car_vin" type="text" >
+
+    <div id="btn_add_car"></div>
+    <div id = "btn_back"></div>
+
+    <script src="General.js">
+        document.addEventListener("DOMContentLoaded", View_btns);
+
+        function View_btns() 
+        {
+            const containerAdd = document.getElementById("btn_add_car")
+            const containerBack = document.getElementById("btn_back")
+
+            containerAdd.innerHTML = "";
+            containerBack.innerHTML = "";
+
+            const hashkey = getHashkeyCookie();
+
+            renderButtons(
+            [
+                {
+                    containerId: "btn_add_car",
+                    className: "btn-car",
+                    text: "Создать авто",
+                    onclick:Add_car
+                },
+                {
+                    containerId: "btn_back",
+                    className: "btn-back",
+                    text: "Назад",
+                    onClick: () => submitForm("/", {hashkey:hashkey, action: "html", name_page: "main" })
+                }
+            ]
+            )
+        }
+        function isValidVIN(vin) 
+        {
+            vin = vin.trim().toUpperCase();
+
+            if (vin.length !== 17)
+            {
+                return false;
+            }
+            const vinRegex = /^[A-HJ-NPR-Z0-9]{17}$/;
+            if (!vinRegex.test(vin))
+            {
+                return false;
+            }
+            const transliteration = {
+                A:1, B:2, C:3, D:4, E:5, F:6, G:7, H:8,
+                J:1, K:2, L:3, M:4, N:5, P:7, R:9,
+                S:2, T:3, U:4, V:5, W:6, X:7, Y:8, Z:9,
+                '0':0, '1':1, '2':2, '3':3, '4':4,
+                '5':5, '6':6, '7':7, '8':8, '9':9
+            };
+            const weights = [8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+
+            let sum = 0;
+            for (let i = 0; i < 17; i++) 
+            {
+                const char = vin[i];
+                const value = transliteration[char];
+                const weight = weights[i];
+                sum += value * weight;
+            }
+
+            const remainder = sum % 11;
+            const checkDigit = remainder === 10 ? 'X' : String(remainder);
+            return vin[8] === checkDigit;
+        }
+        function Add_car() 
+        {
+            const car_model= document.getElementById("car_model").value;
+            const car_vin= document.getElementById("car_vin").value.trim();
+            const hashkey = getHashkeyCookie()
+
+            if (!car_model || car_model.length < 4) 
+            {
+                showToast("Название Машины должно быть содержать минимум 4 символа!", "warning");
+                return;
+            }
+            if (!isValidVIN(car_vin)) 
+            {
+                showToast("VIN должен содержать 17 символов (латиница и цифры, без I, O, Q)", "warning");
+                return;
+            }
+            if (hashkey != null) 
+            {
+                submitForm("/Main", {
+                    hashkey: hashkey,
+                    action: "add_car",
+                    car_model: car_model,
+                    car_vin: car_vin
+                });
+            }
+            else
+            {
+                showToast("Нужно войти в аккаунт","warning");
+            }
+        }      
+    </script>
+
+
+</body>
+</html>

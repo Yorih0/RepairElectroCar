@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Регистрация</title>
+  <link rel="stylesheet" href="css/toast.css">
+</head>
+<body>
+    <p>Форма регистрации</p>
+    <table>
+        <tr><th><label for="login">Логин</label></th><th><input id="login" type="text"></th></tr>
+        <tr><th><label for="password">Пароль</label></th><th><input id="password" type="password"></th></tr>
+        <tr><th><label for="password_repeat">Повтор пароля</label></th><th><input id="password_repeat" type="password"></th></tr>
+        <tr><th><label for="mail">Почта</label></th><th><input id="mail" type="email"></th></tr>
+        <tr><th><label for="phone">Телефон</label></th><th><input id="phone" type="tel"></th></tr>
+    </table>
+    <div id="btn_register"></div>
+    <div id="btn_back"></div>
+
+    <script src="General.js">
+        document.addEventListener("DOMContentLoaded", View_btns);
+        function View_btns()
+        {
+            const containerRegister = document.getElementById("btn_register")
+            const containerBack = document.getElementById("btn_back")
+
+            containerRegister.innerHTML = "";
+            containerBack.innerHTML = "";
+
+            const hashkey = getHashkeyCookie();
+
+            renderButtons(
+            [
+                {
+                    containerId: "btn_register",
+                    className: "btn-register",
+                    text: "Регистрация",
+                    onclick:Register
+                },
+                {
+                    containerId: "btn_register",
+                    className: "btn-back",
+                    text: "Назад",
+                    onClick: () => submitForm("/", {hashkey:hashkey, action: "html", name_page: "main" })
+                }
+            ]
+            )
+            const container = document.getElementById("Choose_Login_or_Reg");
+            container.innerHTML = "";
+
+            const regBtn = document.createElement("button");
+            regBtn.type = "button";
+            regBtn.className = "btn-reg";
+            regBtn.textContent = "Зарегистрироваться";
+            regBtn.onclick = Register;
+            container.appendChild(regBtn);
+
+            const bnt_back_block = document.getElementById("btn_back");
+            bnt_back_block.innerHTML = "";
+            const bnt_back = document.createElement("button");
+            bnt_back.type = "button";
+            bnt_back.className = "btn-back";
+            bnt_back.textContent = "Назат";
+            bnt_back.onclick = Back;
+            bnt_back_block.appendChild(bnt_back);
+        }
+    function Register()
+    {
+        const loginValue = (document.getElementById("login")?.value || "").trim();
+        const passwordValue = (document.getElementById("password")?.value || "").trim();
+        const passwordRepeat = (document.getElementById("password_repeat")?.value || "").trim();
+        const mailValue = (document.getElementById("mail")?.value || "").trim();
+        const phoneValue = (document.getElementById("phone")?.value || "").trim();
+
+        if (!loginValue || !passwordValue || !passwordRepeat || !mailValue || !phoneValue) 
+        {
+            showToast("Заполните все поля","warning");
+            return;
+        }
+
+        if (loginValue.length < 4) 
+        {
+            showToast("Логин должен быть не менее 4 символов","warning");
+            return;
+        }
+        if (passwordValue !== passwordRepeat) {
+            showToast("Пароли не совпадают","error");
+            return;
+        }
+        submitForm("/", {
+                action: "registed",
+                login: loginValue,
+                password: passwordValue,
+                password_repeat: passwordRepeat,
+                mail: mailValue,
+                phone: phoneValue,
+            });
+        showToast("Регистрация отправлена","success");
+    }
+    function Back() 
+    {
+        submitForm("/Main", {
+            action: "html",
+            name_page: "main"
+        });
+    }
+  </script>
+</body>
+</html>
