@@ -3,7 +3,36 @@ import hashlib
 import os
 
 class User:
-    def __init__(self, dict,file_db=None):
+    def __init__(self, dict, file_db=None, from_db=False):
+        # Инициализируем все атрибуты как None
+        self.__id = None
+        self.__role = None
+        self.__login = None
+        self.__password = None
+        self.__mail = None
+        self.__phone = None
+        self.__hashkey = None
+        
+        # Обработка hashkey с file_db
+        if dict.get("hashkey") and (file_db is not None):
+            hashkey_value = dict.get("hashkey")
+            # Проверяем, что hashkey не 'None' и не пустая строка
+            if hashkey_value and hashkey_value != 'None' and hashkey_value != '':
+                user = User.Find_user_by_atr("hashkey", hashkey_value, file_db)
+                # Правильная проверка на None
+                if user is not None:
+                    # Копируем все атрибуты из найденного пользователя
+                    self.__id = user.id
+                    self.__role = user.role
+                    self.__login = user.login
+                    self.__password = user.password
+                    self.__mail = user.mail
+                    self.__phone = user.phone
+                    self.__hashkey = user.hashkey
+                    # Возвращаемся - объект полностью инициализирован
+                    return
+        
+        # Устанавливаем значения из словаря (этот код выполняется только если пользователь не найден по hashkey)
         if dict.get("id") is not None:
             self.__id = dict.get("id")
 
@@ -14,8 +43,10 @@ class User:
             self.__login = dict.get("login")
         
         if dict.get("password") is not None:
-            password = dict.get("password")
-            self.__password = hashlib.sha256(password.encode("utf-8")).hexdigest()
+            if from_db:
+                self.__password = dict.get("password")
+            else:
+                self.__password = hashlib.sha256(dict.get("password").encode("utf-8")).hexdigest()
         
         if dict.get("password_repeat") is not None:
             password_repeat = dict.get("password_repeat")
@@ -26,22 +57,19 @@ class User:
         
         if dict.get("phone") is not None:
             self.__phone = dict.get("phone")
-            
-        random_bytes = os.urandom(16)
-        self.__hashkey = hashlib.sha256(random_bytes).hexdigest()
         
-        if dict.get("hashkey") is not None:
-            user = User.Find_user_by_atr("hashkey",dict.get("hashkey"),file_db)
-            self.id = user.id
-            self.role = user.role
-            self.login = user.login
-            self.password = user.password
-            self.mail = user.mail
-            self.phone = user.phone
+        # Устанавливаем hashkey только если его еще нет
+        if dict.get("hashkey") is not None and self.__hashkey is None:
+            hashkey_value = dict.get("hashkey")
+            if hashkey_value != 'None' and hashkey_value != '':
+                self.__hashkey = hashkey_value    
 
     @property
     def id(self):
         return getattr(self, "_User__id", None)
+    @id.setter
+    def id(self,value):
+        self.__id = value
 
     @property
     def role(self):
@@ -102,6 +130,9 @@ class User:
     @property
     def hashkey(self):
         return getattr(self, "_User__hashkey", None)
+    @hashkey.setter
+    def hashkey(self, value):
+        self.__hashkey = value
 
     def Info(self):
         info = {
@@ -109,7 +140,6 @@ class User:
             "role": self.role,
             "login": self.login,
             "password": self.password,
-            "password_repeat": self.password_r,
             "mail": self.mail,
             "phone": self.phone,
             "hashkey": self.hashkey,
@@ -150,15 +180,20 @@ class User:
                 con.rollback()
                 return result
             
+            random_bytes = os.urandom(16)
+            self.hashkey = hashlib.sha256(random_bytes).hexdigest()
+
             cursor.execute("""INSERT INTO Users (role, login, password, mail, phone, hashkey) 
                   VALUES (?, ?, ?, ?, ?, ?)""",
                ("customers", self.login, self.password, self.mail, 
                 self.phone, self.hashkey))
-            self.__id = cursor.lastrowid
-
+            
+            self.id = cursor.lastrowid
             con.commit()
+
             result["status"] = "success"
             result["message"] = "Пользователь успешно зарегистрированы"
+            result["user"] = self
             return result
             
         except sqlite3.Error as e:
@@ -174,8 +209,7 @@ class User:
         cursor = con.cursor()
         
         try:
-            cursor.execute("SELECT id, password, role, mail, phone FROM Users WHERE login = ?", 
-                         (self.login,))
+            cursor.execute("SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE login = ?", (self.login,))
             row = cursor.fetchone()
             
             result = {
@@ -187,18 +221,27 @@ class User:
             if not row:
                 return result
                 
-            stored_hash = row[1]
-            if self.password != stored_hash:
+            password_db = row[3]
+
+            if self.password != password_db:
+                result['message'] = "Неверный пароль"
                 return result
             
-            user_info = self.Find_user_by_atr("login", self.login, file_db)
-            
-            result = {
-                "status": "success",
-                "message": "Вход выполнен",
-                "user": user_info,
+            print(row)
+            user_data = {
+                "id": row[0],
+                "role": row[1],
+                "login": row[2],
+                "password": row[3],
+                "mail": row[4],
+                "phone": row[5],
+                "hashkey": row[6]
             }
-            
+            print(user_data)
+            user = User(user_data,from_db=True)
+            result["status"] = "success"
+            result["message"] = "Вход выполнен"
+            result["user"] = user
             return result
             
         except sqlite3.Error as e:
@@ -220,17 +263,17 @@ class User:
 
             match attribute:
                 case "hashkey":
-                    query = "SELECT id, login, password, mail, phone, hashkey FROM Users WHERE hashkey = ?"
+                    query = "SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE hashkey = ?"
                 case "login":
-                    query = "SELECT id, login, password, mail, phone, hashkey FROM Users WHERE login = ?"
+                    query = "SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE login = ?"
                 case "password":
-                    query = "SELECT id, login, password, mail, phone, hashkey FROM Users WHERE password = ?"
+                    query = "SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE password = ?"
                 case "mail":
-                    query = "SELECT id, login, password, mail, phone, hashkey FROM Users WHERE mail = ?"
+                    query = "SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE mail = ?"
                 case "phone":
-                    query = "SELECT id, login, password, mail, phone, hashkey FROM Users WHERE phone = ?"
+                    query = "SELECT id, role,login,password, mail, phone,hashkey FROM Users WHERE phone = ?"
                 case _:
-                    return
+                    return None
             
             cursor.execute(query, (value,))
             row = cursor.fetchone()
@@ -240,13 +283,14 @@ class User:
             
             user_data = {
                 "id": row[0],
-                "login": row[1],
-                "password": row[2],
-                "mail": row[3],
-                "phone": row[4],
-                "hashkey": row[5]
+                "role":row[1],
+                "login": row[2],
+                "password": row[3],
+                "mail": row[4],
+                "phone": row[5],
+                "hashkey": row[6]
             }
-            user = User(user_data)
+            user = User(user_data,from_db=True)
             return user
             
         except sqlite3.Error as e:
@@ -256,4 +300,3 @@ class User:
         finally:
             if 'con' in locals():
                 con.close()
-

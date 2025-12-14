@@ -16,7 +16,8 @@
     <div id="btn_add_car"></div>
     <div id = "btn_back"></div>
 
-    <script src="General.js">
+    <script src="js/General.js"></script>
+    <script>
         document.addEventListener("DOMContentLoaded", View_btns);
 
         function View_btns() 
@@ -35,7 +36,7 @@
                     containerId: "btn_add_car",
                     className: "btn-car",
                     text: "Создать авто",
-                    onclick:Add_car
+                    onClick:Add_car
                 },
                 {
                     containerId: "btn_back",

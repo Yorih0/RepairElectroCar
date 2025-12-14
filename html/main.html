@@ -11,7 +11,8 @@
   <div id="btn_exit"></div>
   <div id="btn_order"></div>
 
-  <script src="General.js">
+  <script src="js/General.js"></script>
+  <script>
     document.addEventListener("DOMContentLoaded", View_btns);
 
     function View_btns() 
@@ -66,7 +67,7 @@
       ]);
     }
     function Exit() {
-      document.cookie = "hashkey=; path=/; max-age=0";
+      document.cookie = "hashkey=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       View_btns();
     }
   </script>

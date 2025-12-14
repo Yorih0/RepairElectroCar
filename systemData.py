@@ -8,11 +8,11 @@ from historyOfOrder import HistoryOfOrder
 class SystemData:
     def __init__(self, dict, file_db):
         try:
-            self.__user = User(dict)
-            self.__customer = Customer(dict)
-            self.__worker = Worker(dict)
-            self.__order = Order(dict)
-            self.__historyOfOrder = HistoryOfOrder(dict)
+            self.__user = User(dict,file_db)
+            # self.__customer = Customer(dict,file_db)
+            # self.__worker = Worker(dict,file_db)
+            # self.__order = Order(dict,file_db)
+            # self.__historyOfOrder = HistoryOfOrder(dict,file_db)
             self.__file_db = file_db
         except ImportError as e:
             raise ImportError(f"Ошибка импорта модулей: {e}")
@@ -72,10 +72,16 @@ class SystemData:
         }
 
     def Register_user(self):
-        return self.User.Register_user(self.file_db)
+        data = self.User.Register_user(self.file_db)
+        if(data["status"] == "success"):
+            self.User = data["user"]
+        return data
 
     def Login_user(self):
-        return self.User.Login_user(self.file_db)
+        data = self.User.Login_user(self.file_db)
+        if(data["status"] == "success"):
+            self.User = data["user"]
+        return data
 
     def Add_customer(self):
         return self.Customer.Add_car(self.User, self.file_db)

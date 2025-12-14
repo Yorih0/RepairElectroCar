@@ -17,7 +17,8 @@
     <div id="btn_register"></div>
     <div id="btn_back"></div>
 
-    <script src="General.js">
+    <script src="js/General.js"></script>
+    <script>
         document.addEventListener("DOMContentLoaded", View_btns);
 
         function View_btns() 
@@ -38,13 +39,13 @@
                     containerId: "btn_login",
                     className: "btn-login",
                     text: "Вход",
-                    onclick:Login
+                    onClick:Login
                 },
                 {
                     containerId: "btn_register",
                     className: "btn-register",
                     text: "Регистрация",
-                    onclick:Register
+                    onClick:Register
                 },
                 {
                     containerId: "btn_register",

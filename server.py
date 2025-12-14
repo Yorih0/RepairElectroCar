@@ -1,6 +1,7 @@
 import socket
 import os
-from systemData import SystemData   # фасад
+from systemData import SystemData
+from urllib.parse import parse_qs, unquote_plus
 
 ip = socket.gethostbyname(socket.gethostname())
 port = 20000
@@ -31,82 +32,101 @@ def Run_server():
         data = Get_Form_Data(request.decode("utf-8"))
         print(f"Полученные данные {data}")
         
+        # Для статических файлов (css, js) не создаем SystemData
+        if data.get("action") in ["css", "js"]:
+            Sent_page(conn, FOLDER, data.get("name_page"), data.get("action"), None)
+            continue
+            
+        # Для остальных запросов создаем SystemData
         system = SystemData(data, DATA_BASE)
-
+        print("Данные пользователя")
+        print(system.User.Info())
+        
         match data.get("action"):
             case "login":
-                response = system.Login_user()
-                user = response['user']
-                Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", user, message=response['message'])
+                response = system.Login_user()#тут ошибка
+                # system.User = response 
+                # После успешного входа устанавливаем куки
+                if response['status'] == 'success':
+                    Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", 
+                             system, message=response['message'], set_cookie=True)
+                else:
+                    Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", 
+                             system, message=response['message'])
 
             case "register":
                 response = system.Register_user()
-                user = response['user']
-                Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", user, message=response['message'])
+                # user = response['user']
+                # После успешной регистрации устанавливаем куки
+                if response['status'] == 'success':
+                    Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", 
+                             system, message=response['message'], set_cookie=True)
+                else:
+                    Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", 
+                             system, message=response['message'])
 
             case "add_customer":
                 ok = system.Add_customer()
                 msg = "Автомобиль добавлен" if ok else "Ошибка добавления автомобиля"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "remove_customer":
                 ok = system.Remove_customer()
                 msg = "Автомобиль удалён" if ok else "Ошибка удаления автомобиля"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "add_worker":
                 ok = system.Add_worker()
                 msg = "Работник добавлен" if ok else "Ошибка добавления работника"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "remove_worker":
                 ok = system.Remove_worker()
                 msg = "Работник удалён" if ok else "Ошибка удаления работника"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "add_order":
                 ok = system.Add_order()
                 msg = "Заказ добавлен" if ok else "Ошибка добавления заказа"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "remove_order":
                 ok = system.Remove_order()
                 msg = "Заказ удалён" if ok else "Ошибка удаления заказа"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "add_history":
                 ok = system.Add_history()
                 msg = "История добавлена" if ok else "Ошибка добавления истории"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "remove_history":
                 ok = system.Remove_history()
                 msg = "История удалена" if ok else "Ошибка удаления истории"
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None, message=msg)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system, message=msg)
 
             case "html":
-                Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", None)
-                    
-            case "css":
-                Sent_page(conn, FOLDER, data.get("name_page"), "css", None)
+                Sent_page(conn, FOLDER, data.get("name_page", PAGE_MAIN), "html", system)
                 
             case _:
-                Sent_page(conn, FOLDER, PAGE_MAIN, "html", None)
+                Sent_page(conn, FOLDER, PAGE_MAIN, "html", system)
     
     Off_server(server)
 
-def Sent_page(conn, folder, file_name, file_type, user, message=None):
+def Sent_page(conn, folder, file_name, file_type, system, message=None, set_cookie=False):
     answer, data, type = Load_file(folder, file_name, file_type)
     
     if answer == "FileIsFound":
         if message and file_type == "html":
+            # Экранируем сообщение для JavaScript
+            safe_message = message.replace('"', '\\"').replace("'", "\\'")
             toast_html = f"""
             <script>
               if (typeof showToast === 'function') {{
-                  showToast("{message}", "info");
+                  showToast("{safe_message}", "info");
               }} else {{
                   document.body.insertAdjacentHTML('beforeend',
-                    '<div class="toast info show"><span>{message}</span></div>');
+                    '<div class="toast info show"><span>{safe_message}</span></div>');
               }}
             </script>
             """
@@ -118,8 +138,17 @@ def Sent_page(conn, folder, file_name, file_type, user, message=None):
         response = f"HTTP/1.1 200 {answer}\r\n"
         response += f"Content-Type: {type}\r\n"
         response += "Content-Length: {}\r\n".format(len(data.encode("utf-8")))
-        if user is not None:
-            response += f"Set-Cookie: hashkey={user.hashkey}\r\n"
+        
+        # Устанавливаем куки только если нужно и если есть валидный hashkey
+        if set_cookie and system and hasattr(system, "User"):
+            user_info = system.User.Info()
+            hashkey = user_info.get('hashkey')
+            print("=====================")
+            print(hashkey)
+            print("=====================")
+            if hashkey and hashkey != 'None' and hashkey != 'xxx':
+                response += f"Set-Cookie: hashkey={hashkey}; Path=/;\r\n"
+        
         response += "\r\n" 
         response += data
     else:
@@ -136,6 +165,9 @@ def Load_file(folder,file_name, file_type):
         elif file_type == "css":
             file_path = os.path.join(folder, "css", file_name + ".css")
             content_type = "text/css;charset=utf-8"
+        elif file_type == "js":
+            file_path = os.path.join(folder, "js", file_name + ".js")
+            content_type = "application/javascript; charset=utf-8"
         else:
             return "UnsupportedType", "<h1>Unsupported file type</h1>", "text/plain"
 
@@ -152,62 +184,53 @@ def Restart_server(server):
     server.close()
     Run_server()
 
-def Url_decode(value):
-    result =""
-    i = 0
-    while i < len(value):
-        if value[i] == "+":
-            result+=" " 
-            i+=1
-            continue
-        if value[i] == "%" and len(value)>i+2:
-            try:
-                result += chr(int(value[i+1:i+3], 16))
-                i+=3
-                continue
-            except:
-                result +=value[i:i+3]
-                i+=3
-                continue
-        else:
-            result+=value[i]
-            i+=1
-    return result
-
 def Get_Form_Data(request):
     params = {}
-    for line in request.split("\r\n"):
+    headers, _, body = request.partition("\r\n\r\n")
+
+    # Парсим Cookie
+    for line in headers.split("\r\n"):
         if line.startswith("Cookie:"):
             cookie_str = line[len("Cookie:"):].strip()
             for pair in cookie_str.split(";"):
                 if "=" in pair:
                     key, value = pair.strip().split("=", 1)
-                    params[key] = Url_decode(value)
+                    decoded_value = unquote_plus(value)
+                    # Игнорируем значение 'None' как строку
+                    if decoded_value != 'None':
+                        params[key] = decoded_value
 
-    if "GET /css/" in request:
-        file_name = request.split("GET /css/")[1].split()[0].replace(".css", "")
+    # Если есть тело (POST)
+    if body:
+        parsed = parse_qs(body, keep_blank_values=True)
+        for key, value in parsed.items():
+            params[key] = value[0]  # берём первое значение
+
+    # Если GET запрос
+    if "GET /js/" in headers:
+        file_name = headers.split("GET /js/")[1].split()[0].replace(".js", "")
+        params["action"] = "js"
+        params["name_page"] = file_name
+    elif "GET /css/" in headers:
+        file_name = headers.split("GET /css/")[1].split()[0].replace(".css", "")
         params["action"] = "css"
         params["name_page"] = file_name
-        return params
-    elif "GET /" in request:
-        path = request.split("GET /")[1].split()[0]
-        if "." in path:
+    elif "GET /" in headers:
+        path = headers.split("GET /")[1].split()[0]
+        # Убираем параметры запроса если есть
+        if '?' in path:
+            path = path.split('?')[0]
+        # Определяем имя страницы
+        if path == "" or path.endswith(".html"):
+            name = "main" if path == "" else path.replace(".html", "")
             params["action"] = "html"
-            params["name_page"] = "main"
-        else:
+            params["name_page"] = name
+        elif '.' not in path:  # Если нет расширения, считаем это html страницей
             params["action"] = "html"
-            params["name_page"] = path if path else "main"
-        return params
-    else:
-        headers = request.split("\r\n\r\n", 1)
-        if len(headers) > 1:
-            body = headers[1]
-            pairs = body.split("&")
-            for pair in pairs:
-                if "=" in pair:
-                    key, value = pair.split("=", 1)
-                    params[key] = Url_decode(value)
-        return params
+            params["name_page"] = path or "main"
+
+    return params
+
 
 if __name__ == "__main__":
     Run_server()
