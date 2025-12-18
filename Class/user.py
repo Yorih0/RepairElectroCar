@@ -71,8 +71,6 @@ class User:
         return getattr(self, "_User__role", None)
     @role.setter
     def role(self, value):
-        if value not in ("customers", "admin"):
-            raise ValueError("Недопустимая роль")
         self.__role = value
 
     @property
@@ -129,13 +127,13 @@ class User:
 
     def Info(self):
         info = {
-            "id": self.id,
+            # "id": self.id,
             "role": self.role,
             "login": self.login,
-            "password": self.password,
+            # "password": self.password,
             "mail": self.mail,
             "phone": self.phone,
-            "hashkey": self.hashkey,
+            # "hashkey": self.hashkey,
         }
         return info
 

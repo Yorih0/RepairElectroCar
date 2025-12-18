@@ -2,7 +2,7 @@ import sqlite3
 # import re
 
 class Customer:
-    def __init__(self, dict):
+    def __init__(self, dict,file_db=None):
         self.__id = None
         self.__user_id = None
         self.__car_model = None
@@ -55,8 +55,8 @@ class Customer:
 
     def Info(self):
         return {
-            "id": self.id,
-            "user_id": self.user_id,
+            # "id": self.id,
+            # "user_id": self.user_id,
             "car_model": self.car_model,
             "car_vin": self.car_vin
         }

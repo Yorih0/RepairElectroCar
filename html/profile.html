@@ -2,391 +2,86 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой профиль</title>
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            margin-bottom: 10px;
+        }
+        .section {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        li {
+            padding: 4px 0;
+        }
+        @media (max-width: 768px) {
+            table, th, td {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>Мой профиль</h1>
-        <nav>
-            <a href="/">Главная</a> |
-            <a href="/orders">Мои заказы</a> |
-            <a href="/logout">Выход</a>
-        </nav>
-        <hr>
-    </header>
+
+    <h1>Профиль пользователя</h1>
+
+    <!-- Информация о пользователе -->
+    <div class="section" id="user-info">
+        <h2>Информация о пользователе</h2>
+        <ul id="user-details"></ul>
+    </div>
+
+    <!-- Автомобили пользователя -->
+    <div class="section" id="cars-info">
+        <h2>Автомобили</h2>
+        <table id="cars-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Марка</th>
+                    <th>Модель</th>
+                    <th>Год</th>
+                    <th>Номер</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Данные будут вставлены через JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Скрипт для отображения данных -->
     
-    <main>
-        <!-- Блок загрузки -->
-        <div id="loading">
-            <h3>Загрузка данных профиля...</h3>
-        </div>
-        
-        <!-- Основной контент профиля -->
-        <div id="profile-content" style="display: none;">
-            <!-- Основная информация пользователя -->
-            <h2>Основная информация</h2>
-            <table border="1" cellpadding="10" cellspacing="0" width="100%">
-                <tr>
-                    <td width="30%"><strong>Логин:</strong></td>
-                    <td id="login">-</td>
-                </tr>
-                <tr>
-                    <td><strong>Email:</strong></td>
-                    <td id="mail">-</td>
-                </tr>
-                <tr>
-                    <td><strong>Телефон:</strong></td>
-                    <td id="phone">-</td>
-                </tr>
-                <tr>
-                    <td><strong>Роль в системе:</strong></td>
-                    <td id="role">-</td>
-                </tr>
-                <tr>
-                    <td><strong>ID пользователя:</strong></td>
-                    <td id="user-id">-</td>
-                </tr>
-            </table>
-            
-            <!-- Информация о клиенте (если роль customer) -->
-            <div id="customer-info" style="display: none;">
-                <h2>Информация о клиенте</h2>
-                <table border="1" cellpadding="10" cellspacing="0" width="100%">
-                    <tr>
-                        <td width="30%"><strong>ID клиента:</strong></td>
-                        <td id="customer-id">-</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Модель автомобиля:</strong></td>
-                        <td id="car-model">-</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Регистрационный номер (VIN):</strong></td>
-                        <td id="car-vin">-</td>
-                    </tr>
-                </table>
-            </div>
-            
-            <!-- Информация о работнике (если роль worker) -->
-            <div id="worker-info" style="display: none;">
-                <h2>Информация о работнике</h2>
-                <table border="1" cellpadding="10" cellspacing="0" width="100%">
-                    <tr>
-                        <td width="30%"><strong>ID работника:</strong></td>
-                        <td id="worker-id">-</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Специализация:</strong></td>
-                        <td id="specialization">-</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Опыт работы (лет):</strong></td>
-                        <td id="experience">-</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Рейтинг:</strong></td>
-                        <td id="rating">-</td>
-                    </tr>
-                </table>
-            </div>
-            
-            <!-- Статистика по заказам -->
-            <h2>Статистика заказов</h2>
-            <table border="1" cellpadding="10" cellspacing="0" width="100%">
-                <tr>
-                    <th width="30%">Тип заказа</th>
-                    <th>Количество</th>
-                    <th>Действия</th>
-                </tr>
-                <tr>
-                    <td><strong>Всего заказов:</strong></td>
-                    <td id="total-orders">0</td>
-                    <td><button onclick="viewAllOrders()">Просмотреть все</button></td>
-                </tr>
-                <tr>
-                    <td><strong>Новые заказы:</strong></td>
-                    <td id="new-orders">0</td>
-                    <td><button onclick="viewNewOrders()">Просмотреть новые</button></td>
-                </tr>
-                <tr>
-                    <td><strong>В работе:</strong></td>
-                    <td id="in-progress-orders">0</td>
-                    <td><button onclick="viewInProgressOrders()">Просмотреть в работе</button></td>
-                </tr>
-                <tr>
-                    <td><strong>Завершенные:</strong></td>
-                    <td id="completed-orders">0</td>
-                    <td><button onclick="viewCompletedOrders()">Просмотреть завершенные</button></td>
-                </tr>
-            </table>
-            
-            <!-- Последние заказы -->
-            <h2>Последние заказы</h2>
-            <div id="recent-orders">
-                <p>Загрузка списка заказов...</p>
-            </div>
-            
-            <!-- Кнопки действий -->
-            <div style="margin-top: 30px; padding: 20px; border: 1px solid #ccc;">
-                <h3>Действия</h3>
-                <div id="customer-actions" style="display: none;">
-                    <button onclick="createNewOrder()">Создать новый заказ</button>
-                    <button onclick="viewMyOrders()">Мои заказы</button>
-                </div>
-                <div id="worker-actions" style="display: none;">
-                    <button onclick="viewAssignedOrders()">Назначенные заказы</button>
-                    <button onclick="viewAvailableOrders()">Доступные заказы</button>
-                </div>
-                <div id="admin-actions" style="display: none;">
-                    <button onclick="viewAllUsers()">Управление пользователями</button>
-                    <button onclick="viewAllOrdersAdmin()">Управление заказами</button>
-                    <button onclick="viewStatistics()">Статистика</button>
-                </div>
-            </div>
-        </div>
 
-        <div id="error-message" style="display: none;">
-            <h3 style="color: red;">Ошибка загрузки профиля</h3>
-            <p id="error-text" style="color: red;"></p>
-            <button onclick="window.location.reload()">Повторить загрузку</button>
-            <button onclick="window.location.href='/'">На главную</button>
-        </div>
-    </main>
-    
-    <footer style="margin-top: 50px; padding: 20px; border-top: 1px solid #ccc;">
-        <p>© 2023 Сервисный центр. Все права защищены.</p>
-        <p>Версия профиля: 1.0</p>
-    </footer>
-
-    <script>
-        // Данные профиля (в реальном приложении будут загружаться с сервера)
-        // Это пример структуры данных, которая будет приходить из БД
-        const mockUserData = {
-            // Данные из таблицы Users
-            user: {
-                id: 7,
-                login: "52ivan",
-                mail: "catqwe@fffffgmai.com",
-                phone: "+375336135444",
-                role: "customer", // или "worker", или "admin"
-                hashkey: "44e1bdc5-2b7c-40d3-8216-96ff0dbb894e"
-            },
-            // Данные из таблицы Customers (если роль customer)
-            customer: {
-                id: 5,
-                car_model: "Tesla Model 3",
-                car_vin: "5YJ3E1EA0JF000001"
-            },
-            // Данные из таблицы Workers (если роль worker)
-            worker: {
-                id: 3,
-                specialization: "Электрик",
-                experience: 5,
-                rating: 4.8
-            },
-            // Статистика заказов
-            orders_stats: {
-                total: 3,
-                new: 1,
-                in_progress: 1,
-                completed: 1
-            },
-            // Последние заказы
-            recent_orders: [
-                {
-                    id: 101,
-                    description: "Замена аккумулятора",
-                    status: "новый",
-                    created_at: "2023-12-01 10:30:00",
-                    worker: null
-                },
-                {
-                    id: 102,
-                    description: "Диагностика ходовой части",
-                    status: "в работе",
-                    created_at: "2023-11-28 14:20:00",
-                    worker: "Иван Петров"
-                },
-                {
-                    id: 103,
-                    description: "Замена тормозных колодок",
-                    status: "завершен",
-                    created_at: "2023-11-25 09:15:00",
-                    finished_at: "2023-11-26 16:45:00",
-                    worker: "Алексей Смирнов"
-                }
-            ]
-        };
-
-        // Функция загрузки профиля
-        function loadProfile() {
-            const loadingEl = document.getElementById('loading');
-            const contentEl = document.getElementById('profile-content');
-            const errorEl = document.getElementById('error-message');
-            
-            // Имитация загрузки данных
-            setTimeout(() => {
-                try {
-                    // В реальном приложении здесь будет fetch запрос к серверу
-                    // Пример: const response = await fetch('/api/profile');
-                    // const userData = await response.json();
-                    
-                    const userData = mockUserData; // Вместо этого будут реальные данные
-                    
-                    if (userData && userData.user) {
-                        displayProfile(userData);
-                        loadingEl.style.display = 'none';
-                        contentEl.style.display = 'block';
-                    } else {
-                        throw new Error('Данные профиля не получены');
-                    }
-                } catch (error) {
-                    loadingEl.style.display = 'none';
-                    errorEl.style.display = 'block';
-                    document.getElementById('error-text').textContent = error.message;
-                }
-            }, 1000); // Имитация задержки сети
-        }
-
-        // Функция отображения профиля
-        function displayProfile(data) {
-            // Основная информация пользователя
-            document.getElementById('login').textContent = data.user.login;
-            document.getElementById('mail').textContent = data.user.mail;
-            document.getElementById('phone').textContent = data.user.phone;
-            document.getElementById('role').textContent = getRoleName(data.user.role);
-            document.getElementById('user-id').textContent = data.user.id;
-            
-            // Отображаем соответствующую информацию в зависимости от роли
-            if (data.user.role === 'customer' && data.customer) {
-                document.getElementById('customer-info').style.display = 'block';
-                document.getElementById('customer-actions').style.display = 'block';
-                document.getElementById('customer-id').textContent = data.customer.id;
-                document.getElementById('car-model').textContent = data.customer.car_model;
-                document.getElementById('car-vin').textContent = data.customer.car_vin;
-            }
-            
-            if (data.user.role === 'worker' && data.worker) {
-                document.getElementById('worker-info').style.display = 'block';
-                document.getElementById('worker-actions').style.display = 'block';
-                document.getElementById('worker-id').textContent = data.worker.id;
-                document.getElementById('specialization').textContent = data.worker.specialization;
-                document.getElementById('experience').textContent = data.worker.experience;
-                document.getElementById('rating').textContent = data.worker.rating;
-            }
-            
-            if (data.user.role === 'admin') {
-                document.getElementById('admin-actions').style.display = 'block';
-            }
-            
-            // Статистика заказов
-            if (data.orders_stats) {
-                document.getElementById('total-orders').textContent = data.orders_stats.total;
-                document.getElementById('new-orders').textContent = data.orders_stats.new;
-                document.getElementById('in-progress-orders').textContent = data.orders_stats.in_progress;
-                document.getElementById('completed-orders').textContent = data.orders_stats.completed;
-            }
-            
-            // Последние заказы
-            displayRecentOrders(data.recent_orders || []);
-        }
-
-        // Функция отображения последних заказов
-        function displayRecentOrders(orders) {
-            const ordersContainer = document.getElementById('recent-orders');
-            
-            if (orders.length === 0) {
-                ordersContainer.innerHTML = '<p>Заказов пока нет</p>';
-                return;
-            }
-            
-            let html = '<table border="1" cellpadding="10" cellspacing="0" width="100%">';
-            html += '<tr><th>ID</th><th>Описание</th><th>Статус</th><th>Дата создания</th><th>Исполнитель</th></tr>';
-            
-            orders.forEach(order => {
-                html += `
-                <tr>
-                    <td>${order.id}</td>
-                    <td>${order.description}</td>
-                    <td>${getStatusName(order.status)}</td>
-                    <td>${order.created_at}</td>
-                    <td>${order.worker || 'Не назначен'}</td>
-                </tr>
-                `;
-            });
-            
-            html += '</table>';
-            ordersContainer.innerHTML = html;
-        }
-
-        // Вспомогательные функции
-        function getRoleName(role) {
-            const roles = {
-                'customer': 'Клиент',
-                'worker': 'Работник',
-                'admin': 'Администратор'
-            };
-            return roles[role] || role;
-        }
-
-        function getStatusName(status) {
-            const statuses = {
-                'new': 'Новый',
-                'в работе': 'В работе',
-                'завершен': 'Завершен',
-                'отменен': 'Отменен'
-            };
-            return statuses[status] || status;
-        }
-
-        // Обработчики кнопок (заглушки)
-        function viewAllOrders() {
-            alert('Просмотр всех заказов');
-        }
-
-        function viewNewOrders() {
-            alert('Просмотр новых заказов');
-        }
-
-        function viewInProgressOrders() {
-            alert('Просмотр заказов в работе');
-        }
-
-        function viewCompletedOrders() {
-            alert('Просмотр завершенных заказов');
-        }
-
-        function createNewOrder() {
-            alert('Создание нового заказа');
-        }
-
-        function viewMyOrders() {
-            alert('Просмотр моих заказов');
-        }
-
-        function viewAssignedOrders() {
-            alert('Просмотр назначенных заказов');
-        }
-
-        function viewAvailableOrders() {
-            alert('Просмотр доступных заказов');
-        }
-
-        function viewAllUsers() {
-            alert('Управление пользователями');
-        }
-
-        function viewAllOrdersAdmin() {
-            alert('Управление заказами');
-        }
-
-        function viewStatistics() {
-            alert('Просмотр статистики');
-        }
-
-        // Загрузка профиля при открытии страницы
-        window.onload = loadProfile;
-    </script>
 </body>
 </html>
