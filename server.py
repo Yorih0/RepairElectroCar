@@ -1,6 +1,6 @@
 import socket
 import os
-from systemData import SystemData
+from Class.systemData import SystemData
 from urllib.parse import parse_qs, unquote_plus
 
 ip = socket.gethostbyname(socket.gethostname())

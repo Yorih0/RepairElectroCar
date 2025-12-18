@@ -1,8 +1,8 @@
-from user import User
-from customer import Customer
-from worker import Worker
-from order import Order
-from historyOfOrder import HistoryOfOrder
+from Class.user import User
+from Class.customer import Customer
+from Class.worker import Worker
+from Class.order import Order
+from Class.historyOfOrder import HistoryOfOrder
 
 
 class SystemData:

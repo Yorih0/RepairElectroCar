@@ -57,7 +57,6 @@ class HistoryOfOrder:
             "comment": self.comment
         }
 
-    # --- Методы работы с БД ---
     def Add_history(self, file_db):
         try:
             con = sqlite3.connect(f"{file_db}")
@@ -88,14 +87,27 @@ class HistoryOfOrder:
             if 'con' in locals(): con.close()
 
     @staticmethod
-    def Find_history_by_order(order_id, file_db):
+    def Find_history_by_attr(attribute, value, file_db):
         try:
             con = sqlite3.connect(f"{file_db}")
             cursor = con.cursor()
-            cursor.execute("""SELECT id, order_id, status, timestamp, comment 
-                              FROM History_of_orders WHERE order_id = ?""", (order_id,))
+
+            match attribute:
+                case "id":
+                    query = """SELECT id, order_id, status, timestamp, comment
+                            FROM History_of_orders WHERE id = ?"""
+                case "order_id":
+                    query = """SELECT id, order_id, status, timestamp, comment
+                            FROM History_of_orders WHERE order_id = ?"""
+                case "status":
+                    query = """SELECT id, order_id, status, timestamp, comment
+                            FROM History_of_orders WHERE status = ?"""
+                case _:
+                    return []
+
+            cursor.execute(query, (value,))
             rows = cursor.fetchall()
-            if not rows: return []
+
             histories = []
             for row in rows:
                 histories.append(HistoryOfOrder({
@@ -105,9 +117,42 @@ class HistoryOfOrder:
                     "timestamp": row[3],
                     "comment": row[4]
                 }))
+
             return histories
+
         except sqlite3.Error as e:
             print(f"Ошибка при поиске истории: {e}")
             return []
+
         finally:
-            if 'con' in locals(): con.close()
+            if 'con' in locals():
+                con.close()
+
+    @staticmethod
+    def Remove_history_by_attr(attribute, value, file_db):
+        try:
+            con = sqlite3.connect(f"{file_db}")
+            cursor = con.cursor()
+
+            match attribute:
+                case "id":
+                    query = "DELETE FROM History_of_orders WHERE id = ?"
+                case "order_id":
+                    query = "DELETE FROM History_of_orders WHERE order_id = ?"
+                case "status":
+                    query = "DELETE FROM History_of_orders WHERE status = ?"
+                case _:
+                    return 0
+
+            cursor.execute(query, (value,))
+            deleted = cursor.rowcount
+            con.commit()
+            return deleted
+
+        except sqlite3.Error as e:
+            print(f"Ошибка при удалении истории: {e}")
+            return 0
+
+        finally:
+            if 'con' in locals():
+                con.close()

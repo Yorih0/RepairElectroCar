@@ -2,6 +2,12 @@ import sqlite3
 
 class Worker:
     def __init__(self, dict):
+        self.__id = None
+        self.__user_id = None
+        self.__specialization = None
+        self.__experience = None
+        self.__rating = None
+
         if dict.get("id") is not None:
             self.__id = dict.get("id")
         if dict.get("user_id") is not None:
@@ -123,3 +129,81 @@ class Worker:
             return False
         finally:
             if 'con' in locals(): con.close()
+    @staticmethod
+    def Get_all_workers_by_atr(attribute, value, file_db):
+        try:
+            con = sqlite3.connect(f"{file_db}")
+            cursor = con.cursor()
+
+            match attribute:
+                case "specialization":
+                    query = "SELECT id, user_id, specialization, experience, rating FROM Workers WHERE specialization = ?"
+                case "user_id":
+                    query = "SELECT id, user_id, specialization, experience, rating FROM Workers WHERE user_id = ?"
+                case "rating":
+                    query = "SELECT id, user_id, specialization, experience, rating FROM Workers WHERE rating = ?"
+                case _:
+                    return []
+
+            cursor.execute(query, (value,))
+            rows = cursor.fetchall()
+
+            workers = []
+            for row in rows:
+                worker_data = {
+                    "id": row[0],
+                    "user_id": row[1],
+                    "specialization": row[2],
+                    "experience": row[3],
+                    "rating": row[4]
+                }
+                workers.append(Worker(worker_data))
+
+            return workers
+
+        except sqlite3.Error as e:
+            print(f"Ошибка при получении работников: {e}")
+            return []
+
+        finally:
+            if 'con' in locals():
+                con.close()
+    @staticmethod
+    def Remove_all_workers_by_atr(attribute, value, file_db):
+        try:
+            con = sqlite3.connect(file_db)
+            cursor = con.cursor()
+
+            match attribute:
+                case "specialization":
+                    check_query = "SELECT COUNT(*) FROM Workers WHERE specialization = ?"
+                    delete_query = "DELETE FROM Workers WHERE specialization = ?"
+                case "user_id":
+                    check_query = "SELECT COUNT(*) FROM Workers WHERE user_id = ?"
+                    delete_query = "DELETE FROM Workers WHERE user_id = ?"
+                case "rating":
+                    check_query = "SELECT COUNT(*) FROM Workers WHERE rating = ?"
+                    delete_query = "DELETE FROM Workers WHERE rating = ?"
+                case _:
+                    raise ValueError("Недопустимый атрибут для удаления")
+
+            cursor.execute(check_query, (value,))
+            count = cursor.fetchone()[0]
+
+            if count == 0:
+                print("Работники с таким параметром не найдены")
+                return 0
+
+            cursor.execute(delete_query, (value,))
+            con.commit()
+
+            return cursor.rowcount
+
+        except (sqlite3.Error, ValueError) as e:
+            print(f"Ошибка при удалении работников: {e}")
+            return 0
+
+        finally:
+            if 'con' in locals():
+                con.close()
+

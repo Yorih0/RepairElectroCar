@@ -1,5 +1,5 @@
-from user import User
-from systemData import SystemData
+from Class.user import User
+from Class.systemData import SystemData
 import sqlite3
 
 TEST_DB = "Data/REP-1.db"
