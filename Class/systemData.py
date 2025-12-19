@@ -1,112 +1,101 @@
+import sqlite3
 from Class.user import User
 from Class.customer import Customer
 from Class.worker import Worker
 from Class.order import Order
 from Class.historyOfOrder import HistoryOfOrder
 
-
 class SystemData:
-    def __init__(self, dict, file_db):
-        self.__user = None
-        self.__customer = None
-        self.__file_db = None
-        try:
-            self.__user = User(dict,file_db)
-            self.__customer = Customer(dict,file_db)
-            # self.__worker = Worker(dict,file_db)
-            # self.__order = Order(dict,file_db)
-            # self.__historyOfOrder = HistoryOfOrder(dict,file_db)
-            self.__file_db = file_db
-        except ImportError as e:
-            raise ImportError(f"Ошибка импорта модулей: {e}")
-        except Exception as e:
-            raise ValueError(f"Ошибка инициализации SystemData: {e}")
+    def __init__(self, file_db="Data/REP-1.db"):
+        self.file_db = file_db
+        self.current_user = None
 
-    @property
-    def User(self): return self.__user
-    @User.setter
-    def User(self, value):
-        if isinstance(value, User): self.__user = value
-        else: raise ValueError("User должен быть экземпляром класса User")
+    # ===== Работа с пользователями =====
+    def create_user(self, login, password, password_r, mail, phone):
+        user = User.form_register({
+            "login": login,
+            "password": password,
+            "password_r": password_r,
+            "mail": mail,
+            "phone": phone
+        })
+        return user.Create_user(self.file_db), user
 
-    @property
-    def Customer(self): return self.__customer
-    @Customer.setter
-    def Customer(self, value):
-        if isinstance(value, Customer): self.__customer = value
-        else: raise ValueError("Customer должен быть экземпляром класса Customer")
+    def find_user(self, login, password):
+        user = User.form_login({"login": login, "password": password})
+        result = user.Find_user(self.file_db)
+        return result, user
 
-    # @property
-    # def Worker(self): return self.__worker
-    # @Worker.setter
-    # def Worker(self, value):
-    #     if isinstance(value, Worker): self.__worker = value
-    #     else: raise ValueError("Worker должен быть экземпляром класса Worker")
+    def delete_user(self, user: User):
+        return user.Delete_user(self.file_db)
 
-    # @property
-    # def Order(self): return self.__order
-    # @Order.setter
-    # def Order(self, value):
-    #     if isinstance(value, Order): self.__order = value
-    #     else: raise ValueError("Order должен быть экземпляром класса Order")
+    # ===== Работа с автомобилями =====
+    def add_car(self, user_id, car_model, car_vin):
+        car = Customer.form_register({
+            "user_id": user_id,
+            "car_model": car_model,
+            "car_vin": car_vin
+        })
+        return car.Add_car(self.file_db), car
 
-    # @property
-    # def historyOfOrder(self): return self.__historyOfOrder
-    # @historyOfOrder.setter
-    # def historyOfOrder(self, value):
-    #     if isinstance(value, HistoryOfOrder): self.__historyOfOrder = value
-    #     else: raise ValueError("historyOfOrder должен быть экземпляром класса HistoryOfOrder")
+    def get_cars_by_user(self, user_id):
+        return Customer.Get_all_cars_by_user_id(user_id, self.file_db)
 
-    @property
-    def file_db(self): return self.__file_db
-    @file_db.setter
-    def file_db(self, value):
-        if value and isinstance(value, str): self.__file_db = value
-        else: raise ValueError("file_db должен быть непустой строкой")
-    def Info(self):
-        return {
-            "User": self.User.Info(),
-            "Customer": self.Customer.Info(),
-            "file_db": self.file_db
-        }
-    # def Info(self):
-    #     return {
-    #         "User": self.User.Info(),
-    #         "Customer": self.Customer.Info(),
-    #         "Worker": self.Worker.Info(),
-    #         "Order": self.Order.Info(),
-    #         "historyOfOrder": self.historyOfOrder.Info(),
-    #         "file_db": self.file_db
-    #     }
+    def remove_car(self, car: Customer):
+        return car.Remove_car(self.file_db)
 
-    def Register_user(self):
-        return self.User.Register_user(self.file_db)
+    # ===== Работа с работниками =====
+    def add_worker(self, user_id, specialization, experience, rating):
+        worker = Worker.form_register({
+            "user_id": user_id,
+            "specialization": specialization,
+            "experience": experience,
+            "rating": rating
+        })
+        return worker.Add_worker(self.file_db), worker
 
-    def Login_user(self):
-        return self.User.Login_user(self.file_db)
+    def get_workers_by_attr(self, attr, value):
+        return Worker.Get_all_workers_by_atr(attr, value, self.file_db)
 
-    def Add_customer(self):
-        return self.Customer.Add_car(self.User, self.file_db)
+    def remove_worker(self, worker: Worker):
+        return worker.Remove_worker(self.file_db)
 
-    def Remove_customer(self):
-        return self.Customer.Remove_car(self.file_db)
-    def All_car_user(self):
-        return Customer.Get_all_cars_by_user_id(self.User.id,self.file_db)
+    # ===== Работа с заказами =====
+    def add_order(self, customer_id, worker_id, status, description, created_at, finished_at=None):
+        order = Order.form_register({
+            "customer_id": customer_id,
+            "worker_id": worker_id,
+            "status": status,
+            "description": description,
+            "created_at": created_at,
+            "finished_at": finished_at
+        })
+        return order.Add_order(self.file_db), order
 
-    # def Add_worker(self):
-    #     return self.Worker.Add_worker(self.file_db)
+    def get_orders_by_user(self, user_id, role):
+        return Order.Get_orders_by_user(user_id, role, self.file_db)
 
-    # def Remove_worker(self):
-    #     return self.Worker.Remove_worker(self.file_db)
+    def remove_order(self, order: Order):
+        return order.Remove_order(self.file_db)
 
-    # def Add_order(self):
-    #     return self.Order.Add_order(self.file_db)
+    def move_orders_to_history(self, user_id, role, comment="Заказ завершён"):
+        return Order.Move_orders_to_history_by_user(user_id, role, self.file_db, comment)
 
-    # def Remove_order(self):
-    #     return self.Order.Remove_order(self.file_db)
+    # ===== Работа с историей заказов =====
+    def add_history(self, order_id, status, timestamp, comment):
+        history = HistoryOfOrder.form_register({
+            "order_id": order_id,
+            "status": status,
+            "timestamp": timestamp,
+            "comment": comment
+        })
+        return history.Add_history(self.file_db), history
 
-    # def Add_history(self):
-    #     return self.historyOfOrder.Add_history(self.file_db)
+    def get_history_by_atr(self, attr, value):
+        return HistoryOfOrder.Find_history_by_attr(attr, value, self.file_db)
 
-    # def Remove_history(self):
-    #     return self.historyOfOrder.Remove_history(self.file_db)
+    def remove_history(self, history: HistoryOfOrder):
+        return history.Remove_history(self.file_db)
+
+    def remove_history_by_atr(self, attr, value):
+        return HistoryOfOrder.Remove_history_by_attr(attr, value, self.file_db)

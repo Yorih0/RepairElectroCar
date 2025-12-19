@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <title>Создать заказ</title>
+</head>
+<body>
+    <h1>Создать заказ</h1>
+
+    <!-- Скрытые поля: customer_id и worker_id заполняются автоматически (если доступны) -->
+    <input id="customer_id" name="customer_id" type="hidden" value="">
+    <input id="worker_id" name="worker_id" type="hidden" value="">
+
+    <label for="status">Статус</label>
+    <select id="status" name="status">
+        <option value="open">open</option>
+        <option value="in_progress">in_progress</option>
+        <option value="completed">completed</option>
+        <option value="cancelled">cancelled</option>
+    </select>
+
+    <label for="description">Описание работ</label>
+    <textarea id="description" name="description" rows="6" placeholder="Краткое описание проблемы"></textarea>
+
+    <label for="created_at">Дата и время создания</label>
+    <input id="created_at" name="created_at" type="datetime-local">
+
+    <label for="finished_at">Дата и время завершения (опционально)</label>
+    <input id="finished_at" name="finished_at" type="datetime-local">
+
+    <div id="btn_add_order"></div>
+    <div id="btn_back"></div>
+
+    <script src="js/General.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", View_btns);
+
+        function View_btns() {
+            const containerAdd = document.getElementById("btn_add_order");
+            const containerBack = document.getElementById("btn_back");
+
+            containerAdd.innerHTML = "";
+            containerBack.innerHTML = "";
+
+            const hashkey = getHashkeyCookie();
+
+            renderButtons([
+                {
+                    containerId: "btn_add_order",
+                    className: "btn-car",
+                    text: "Создать заказ",
+                    onClick: Add_order
+                },
+                {
+                    containerId: "btn_back",
+                    className: "btn-back",
+                    text: "Назад",
+                    onClick: () => submitForm("/", { hashkey: hashkey, action: "html", name_page: "main" })
+                }
+            ]);
+
+            // Попытка заполнить скрытые поля из глобальных данных, если они есть
+            // Если сервер рендерит страницу и вставляет USER_DATA, оно будет использовано
+            try {
+                if (typeof USER_DATA !== "undefined" && USER_DATA) {
+                    if (USER_DATA.id) document.getElementById("customer_id").value = USER_DATA.id;
+                    // если роль и worker_id известны, можно заполнить worker_id
+                    if (USER_DATA.role === "worker" && USER_DATA.id) {
+                        document.getElementById("worker_id").value = USER_DATA.id;
+                    }
+                }
+            } catch (e) {
+                // ничего не делаем — сервер может заполнить по hashkey
+            }
+        }
+
+        function validateDateTime(value) {
+            return value && value.trim().length > 0;
+        }
+
+        function Add_order() {
+            const customer_id = document.getElementById("customer_id").value.trim();
+            const worker_id = document.getElementById("worker_id").value.trim();
+            const status = document.getElementById("status").value;
+            const description = document.getElementById("description").value.trim();
+            const created_at_input = document.getElementById("created_at").value;
+            const finished_at_input = document.getElementById("finished_at").value;
+            const hashkey = getHashkeyCookie();
+
+            if (!description || description.length < 5) {
+                showToast("Описание должно содержать минимум 5 символов", "warning");
+                return;
+            }
+            if (!validateDateTime(created_at_input)) {
+                showToast("Укажите дату и время создания заказа", "warning");
+                return;
+            }
+
+            // Если customer_id/worker_id не заполнены на клиенте, сервер должен определить их по hashkey
+            const payload = {
+                hashkey: hashkey,
+                action: "add_order",
+                status: status,
+                description: description,
+                created_at: created_at_input.replace("T", " "),
+                finished_at: finished_at_input ? finished_at_input.replace("T", " ") : ""
+            };
+
+            if (customer_id) payload.customer_id = Number(customer_id);
+            if (worker_id) payload.worker_id = Number(worker_id);
+
+            if (hashkey != null) {
+                submitForm("/Main", payload);
+            } else {
+                showToast("Нужно войти в аккаунт", "warning");
+            }
+        }
+    </script>
+</body>
+</html>

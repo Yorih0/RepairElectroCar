@@ -1,17 +1,246 @@
-    // function createCookie() {
-    //   const value = encodeURIComponent(Math.random().toString(36).slice(2));
-    //   // Создаём куку на 31 день
-    //   document.cookie = `hashkey=${value}; path=/; max-age=${60 * 60 * 24 * 31}`;
-    //   renderAuthBlock();
-    // }
+Тест пользователя
+from user import User
 
+db = "Data/REP-1.db"
 
-                # # Получаем ID только что добавленного пользователя
-            # user_id = cursor.lastrowid
-            
-            # # Добавляем автомобиль пользователя
-            # cursor.execute("""INSERT INTO customers (user_id, car_model, car_vin) 
-            #                 VALUES (?, ?, ?)""",
-            #             (user_id, self.car_model, self.car_vin))
-            
-            # Фиксируем транзакцию
+# 1. Создание пользователя
+print("\n=== Create_user ===")
+new_user = User.form_register({
+    "login": "ivan",
+    "password": "qwerty",
+    "password_r": "qwerty",
+    "mail": "ivan@example.com",
+    "phone": "+375111111111"
+})
+result = new_user.Create_user(db)
+print(result)
+print(new_user.Info_all())
+
+# 2. Вход пользователя
+print("\n=== Find_user ===")
+login_user = User.form_login({"login": "ivan", "password": "qwerty"})
+result = login_user.Find_user(db)
+print(result)
+print(login_user.Info_all())
+
+# 3. Обновление данных
+print("\n=== Update_user ===")
+login_user.mail = "newmail@example.com"
+login_user.phone = "+375291111111"
+result = login_user.Update_user(db)
+print(result)
+print(login_user.Info_all())
+
+# 4. Поиск по атрибуту (hashkey)
+print("\n=== Find_user_by_atr (hashkey) ===")
+found = User.Find_user_by_atr("hashkey", login_user.hashkey, db)
+print(found.Info_all() if found else "User not found")
+
+# 5. Удаление пользователя
+print("\n=== Delete_user ===")
+result = login_user.Delete_user(db)
+print(result)
+
+# 6. Проверка, что удалён
+print("\n=== Проверка после удаления ===")
+deleted = User.Find_user_by_atr("login", "ivan", db)
+print(deleted)
+
+Тест создани машины
+from customer import Customer
+
+db = "Data/REP-1.db"
+
+# 1. Добавление автомобиля
+print("\n=== Add_car ===")
+new_car = Customer.form_register({
+    "user_id": 20,   # предполагаем, что пользователь с id=1 существует
+    "car_model": "Tesla Model S",
+    "car_vin": "VIN123456789"
+})
+result = new_car.Add_car(db)
+print(result)
+print(new_car.Info_all())
+
+# 2. Поиск автомобиля по VIN
+print("\n=== Find_car_by_atr (car_vin) ===")
+found = Customer.Find_car_by_atr("car_vin", "VIN123456789", db)
+print(found.Info_all() if found else "Car not found")
+
+# 3. Обновление данных автомобиля
+print("\n=== Update_car ===")
+found.car_model = "Tesla Model X"
+result = found.Update_car(db)
+print(result)
+print(found.Info_all())
+
+# 4. Получение всех автомобилей пользователя
+print("\n=== Get_all_cars_by_user_id ===")
+cars = Customer.Get_all_cars_by_user_id(20, db)
+for car in cars:
+    print(car.Info_all())
+
+# 5. Удаление автомобиля
+print("\n=== Remove_car ===")
+result = found.Remove_car(db)
+print(result)
+
+# 6. Проверка, что удалён
+print("\n=== Проверка после удаления ===")
+deleted = Customer.Find_car_by_atr("car_vin", "VIN123456789", db)
+print(deleted if deleted else "Car not found")
+
+# 7. Массовое удаление всех автомобилей пользователя
+print("\n=== Remove_all_cars_by_user_id ===")
+count = Customer.Remove_all_cars_by_user_id(20, db)
+print(f"Удалено автомобилей: {count}")
+cars = Customer.Get_all_cars_by_user_id(20, db)
+print(cars if cars else "У пользователя нет автомобилей")
+тест для заказа
+from order import Order
+
+db = "Data/REP-1.db"
+
+# 1. Создание заказа
+print("\n=== Add_order ===")
+new_order = Order.form_register({
+    "customer_id": 20,
+    "worker_id": 5,
+    "status": "open",
+    "description": "Диагностика электросистемы",
+    "created_at": "2025-12-19 18:45:00",
+    "finished_at": None
+})
+result = new_order.Add_order(db)
+print(result)
+print(new_order.Info_all())
+
+# 2. Поиск заказа по атрибуту (status)
+print("\n=== Find_order_by_atr (status) ===")
+found = Order.Find_order_by_atr("status", "open", db)
+print(found.Info_all() if found else "Order not found")
+
+# 3. Обновление заказа
+print("\n=== Update_order ===")
+found.status = "in_progress"
+found.description = "Проводим ремонт электросистемы"
+result = found.Add_order(db)   # обновление, так как id уже есть
+print(result)
+print(found.Info_all())
+
+# 4. Получение всех заказов по customer_id
+print("\n=== Get_orders_by_user (customer) ===")
+orders = Order.Get_orders_by_user(20, "customer", db)
+for o in orders:
+    print(o.Info_all())
+
+# 7. Перенос заказов в историю
+print("\n=== Move_orders_to_history_by_user ===")
+moved = Order.Move_orders_to_history_by_user(20, "customer", db, comment="Работы завершены")
+print(moved)
+
+# 5. Удаление заказа
+print("\n=== Remove_order ===")
+result = found.Remove_order(db)
+print(result)
+
+# 6. Проверка, что удалён
+print("\n=== Проверка после удаления ===")
+deleted = Order.Find_order_by_atr("id", found.id, db)
+print(deleted if deleted else "Order not found")
+
+Тест для истории заказов 
+from historyOfOrder import HistoryOfOrder
+
+db = "Data/REP-1.db"
+
+# 1. Добавление записи в историю
+print("\n=== Add_history ===")
+new_history = HistoryOfOrder.form_register({
+    "order_id": 3,
+    "status": "completed",
+    "timestamp": "2025-12-19 18:50:00",
+    "comment": "Заказ успешно завершён"
+})
+result = new_history.Add_history(db)
+print(result)
+print(new_history.Info_all())
+
+# 2. Поиск истории по order_id
+print("\n=== Find_history_by_attr (order_id) ===")
+found = HistoryOfOrder.Find_history_by_attr("order_id", 3, db)
+for h in found:
+    print(h.Info_all())
+
+# 3. Удаление конкретной записи истории
+print("\n=== Remove_history ===")
+if found:
+    result = found[0].Remove_history(db)
+    print(result)
+
+# 4. Проверка, что запись удалена
+print("\n=== Проверка после удаления ===")
+deleted = HistoryOfOrder.Find_history_by_attr("id", new_history.id, db)
+print(deleted if deleted else "History not found")
+
+# 5. Массовое удаление по статусу
+print("\n=== Remove_history_by_attr (status) ===")
+count = HistoryOfOrder.Remove_history_by_attr("status", "completed", db)
+print(f"Удалено записей: {count}")
+
+# 6. Проверка, что ничего не осталось
+print("\n=== Проверка после массового удаления ===")
+remaining = HistoryOfOrder.Find_history_by_attr("order_id", 3, db)
+print(remaining if remaining else "История пуста")
+
+тест для работника
+from worker import Worker
+
+db = "Data/REP-1.db"
+
+# 1. Добавление работника
+print("\n=== Add_worker ===")
+new_worker = Worker.form_register({
+    "user_id": 30,   # предполагаем, что пользователь с id=30 существует
+    "specialization": "Электрик",
+    "experience": 5,
+    "rating": 4.5
+})
+result = new_worker.Add_worker(db)
+print(result)
+print(new_worker.Info_all())
+
+# 2. Поиск работника по user_id
+print("\n=== Find_worker_by_atr (user_id) ===")
+found = Worker.Find_worker_by_atr("user_id", 30, db)
+print(found.Info_all() if found else "Worker not found")
+
+# 3. Обновление данных работника
+print("\n=== Update_worker (через Add_worker) ===")
+found.specialization = "Диагност"
+found.experience = 7
+found.rating = 4.8
+result = found.Add_worker(db)   # обновление, так как user_id уже есть
+print(result)
+print(found.Info_all())
+
+# 4. Получение всех работников по специализации
+print("\n=== Get_all_workers_by_atr (specialization) ===")
+workers = Worker.Get_all_workers_by_atr("specialization", "Диагност", db)
+for w in workers:
+    print(w.Info_all())
+
+# 5. Удаление работника
+print("\n=== Remove_worker ===")
+result = found.Remove_worker(db)
+print(result)
+
+# 6. Проверка, что удалён
+print("\n=== Проверка после удаления ===")
+deleted = Worker.Find_worker_by_atr("user_id", 30, db)
+print(deleted if deleted else "Worker not found")
+
+# 7. Массовое удаление по рейтингу
+print("\n=== Remove_all_workers_by_atr (rating) ===")
+count = Worker.Remove_all_workers_by_atr("rating", 4.8, db)
+print(count)

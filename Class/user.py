@@ -3,61 +3,56 @@ import hashlib
 import os
 
 class User:
-    def __init__(self, dict, file_db=None, from_db=False):
-        self.__id = None
-        self.__role = None
-        self.__login = None
-        self.__password = None
-        self.__password_r = None
-        self.__mail = None
-        self.__phone = None
-        self.__hashkey = None
-        
-        if dict.get("hashkey") and (file_db is not None):
-            hashkey_value = dict.get("hashkey")
+    def __init__(self, id=None, role=None, login=None, password=None, password_r = None,mail=None, phone=None, hashkey=None):
+        self.__id = id 
+        self.__role = role 
+        self.__login = login 
+        self.__password = password
+        self.__password_r = password_r
+        self.__mail = mail 
+        self.__phone = phone 
+        self.__hashkey = hashkey
 
-            if hashkey_value and hashkey_value != 'None' and hashkey_value != '':
-                user = User.Find_user_by_atr("hashkey", hashkey_value, file_db)
-
-                if user is not None:
-                    self.__id = user.id
-                    self.__role = user.role
-                    self.__login = user.login
-                    self.__password = user.password
-                    self.__mail = user.mail
-                    self.__phone = user.phone
-                    self.__hashkey = user.hashkey
-                    return
-        
-        if dict.get("id") is not None:
-            self.__id = dict.get("id")
-
-        if dict.get("role") is not None:
-            self.__role = dict.get("role")
-
-        if dict.get("login") is not None:
-            self.__login = dict.get("login")
-        
-        if dict.get("password") is not None:
-            if from_db:
-                self.__password = dict.get("password")
-            else:
-                self.__password = hashlib.sha256(dict.get("password").encode("utf-8")).hexdigest()
-        
-        if dict.get("password_repeat") is not None:
-            password_repeat = dict.get("password_repeat")
-            self.__password_r = hashlib.sha256(password_repeat.encode("utf-8")).hexdigest() 
-        
-        if dict.get("mail") is not None:
-            self.__mail = dict.get("mail")
-        
-        if dict.get("phone") is not None:
-            self.__phone = dict.get("phone")
-        
-        if dict.get("hashkey") is not None and self.__hashkey is None:
-            hashkey_value = dict.get("hashkey")
-            if hashkey_value != 'None' and hashkey_value != '':
-                self.__hashkey = hashkey_value    
+    @classmethod 
+    def form_login(cls,row:dict):
+        return cls(
+            login = row.get("login"),
+            password = hashlib.sha256(row.get("password").encode("utf-8")).hexdigest()
+        )
+    @classmethod 
+    def form_register(cls,row:dict):
+        return cls(
+            login = row.get("login"),
+            password = hashlib.sha256(row.get("password").encode("utf-8")).hexdigest(),
+            password_r = hashlib.sha256(row.get("password_r").encode("utf-8")).hexdigest(),
+            mail = row.get("mail"),
+            phone = row.get("phone")
+        )
+    @classmethod
+    def db(cls,row:dict):
+        return cls(
+            id = row.get("id"),
+            role = row.get("role"),
+            login = row.get("login"),
+            password = row.get("password"),
+            mail = row.get("mail"),
+            phone = row.get("phone"),
+            hashkey = row.get("hashkey")
+        )
+    @classmethod
+    def by_hashkey(cls,row:dict,file_db):
+        user = User.Find_user_by_atr("hashkey",row.get("hashkey"),file_db)
+        if not user:
+            return None
+        return cls(
+            id = user.id,
+            role = user.role,
+            login = user.login,
+            password = user.password,
+            mail = user.mail,
+            phone = user.phone,
+            hashkey = user.hashkey
+        )
 
     @property
     def id(self):
@@ -126,19 +121,24 @@ class User:
         self.__hashkey = value
 
     def Info(self):
-        info = {
-            # "id": self.id,
+        return {
             "role": self.role,
             "login": self.login,
-            # "password": self.password,
+            "mail": self.mail,
+            "phone": self.phone
+        }
+    def Info_all(self):
+        return {
+            "id":self.id,
+            "role": self.role,
+            "login": self.login,
+            "password":self.password,
             "mail": self.mail,
             "phone": self.phone,
-            # "hashkey": self.hashkey,
+            "hashkey":self.hashkey
         }
-        return info
 
-
-    def Register_user(self, file_db):
+    def Create_user(self, file_db):
         result = {
             "status": "error",
             "message": "Неизвестная ошибка"
@@ -196,7 +196,7 @@ class User:
         finally:
             con.close()
 
-    def Login_user(self, file_db):
+    def Find_user(self, file_db):
         con = sqlite3.connect(f"{file_db}")
         cursor = con.cursor()
         
@@ -217,20 +217,6 @@ class User:
             if self.password != password_db:
                 result['message'] = "Неверный пароль"
                 return result
-            
-            # print(row)
-            # user_data = {
-            #     "id": row[0],
-            #     "role": row[1],
-            #     "login": row[2],
-            #     "password": row[3],
-            #     "mail": row[4],
-            #     "phone": row[5],
-            #     "hashkey": row[6]
-            # }
-            # print(user_data)
-            # user = User(user_data,from_db=True)
-            # result["user"] = user
 
             self.id = row[0]
             self.role = row[1]
@@ -251,6 +237,36 @@ class User:
             }
             return result
             
+        finally:
+            con.close()
+
+    def Delete_user(self, file_db):
+        result = {
+            "status": "error",
+            "message": "Неизвестная ошибка"
+        }
+
+        if not self.id:
+            result["message"] = "ID пользователя не задан"
+            return result
+
+        con = sqlite3.connect(f"{file_db}")
+        cursor = con.cursor()
+
+        try:
+            con.execute("BEGIN TRANSACTION")
+            cursor.execute("DELETE FROM Users WHERE id = ?", (self.id,))
+            con.commit()
+
+            result["status"] = "success"
+            result["message"] = "Пользователь удалён"
+            return result
+
+        except sqlite3.Error as e:
+            con.rollback()
+            result["message"] = f"Ошибка базы данных: {str(e)}"
+            return result
+
         finally:
             con.close()
 
@@ -307,37 +323,6 @@ class User:
         finally:
             con.close()
 
-
-    def Delete_user(self, file_db):
-        result = {
-            "status": "error",
-            "message": "Неизвестная ошибка"
-        }
-
-        if not self.id:
-            result["message"] = "ID пользователя не задан"
-            return result
-
-        con = sqlite3.connect(f"{file_db}")
-        cursor = con.cursor()
-
-        try:
-            con.execute("BEGIN TRANSACTION")
-            cursor.execute("DELETE FROM Users WHERE id = ?", (self.id,))
-            con.commit()
-
-            result["status"] = "success"
-            result["message"] = "Пользователь удалён"
-            return result
-
-        except sqlite3.Error as e:
-            con.rollback()
-            result["message"] = f"Ошибка базы данных: {str(e)}"
-            return result
-
-        finally:
-            con.close()
-
     @staticmethod
     def Find_user_by_atr(attribute, value, file_db):
         try:
@@ -378,7 +363,7 @@ class User:
                 "phone": row[5],
                 "hashkey": row[6]
             }
-            user = User(user_data,from_db=True)
+            user = User.db(user_data)
             return user
             
         except sqlite3.Error as e:
@@ -388,4 +373,3 @@ class User:
         finally:
             if 'con' in locals():
                 con.close()
-    

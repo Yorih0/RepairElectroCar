@@ -1,24 +1,47 @@
 import sqlite3
 
 class Worker:
-    def __init__(self, dict):
-        self.__id = None
-        self.__user_id = None
-        self.__specialization = None
-        self.__experience = None
-        self.__rating = None
+    def __init__(self, id=None, user_id=None, specialization=None, experience=None, rating=None):
+        self.__id = id
+        self.__user_id = user_id
+        self.__specialization = specialization
+        self.__experience = experience
+        self.__rating = rating
 
-        if dict.get("id") is not None:
-            self.__id = dict.get("id")
-        if dict.get("user_id") is not None:
-            self.__user_id = dict.get("user_id")
-        if dict.get("specialization") is not None:
-            self.__specialization = dict.get("specialization")
-        if dict.get("experience") is not None:
-            self.__experience = int(dict.get("experience"))
-        if dict.get("rating") is not None:
-            self.__rating = float(dict.get("rating"))
+    # ====== classmethods ======
+    @classmethod
+    def form_register(cls, row: dict):
+        return cls(
+            user_id=row.get("user_id"),
+            specialization=row.get("specialization"),
+            experience=int(row.get("experience", 0)),
+            rating=float(row.get("rating", 0))
+        )
 
+    @classmethod
+    def db(cls, row: dict):
+        return cls(
+            id=row.get("id"),
+            user_id=row.get("user_id"),
+            specialization=row.get("specialization"),
+            experience=row.get("experience"),
+            rating=row.get("rating")
+        )
+
+    @classmethod
+    def by_id(cls, row: dict, file_db):
+        worker = Worker.Find_worker_by_atr("id", row.get("id"), file_db)
+        if worker:
+            return cls(
+                id=worker.id,
+                user_id=worker.user_id,
+                specialization=worker.specialization,
+                experience=worker.experience,
+                rating=worker.rating
+            )
+        return None
+
+    # ====== свойства ======
     @property
     def id(self): return getattr(self, "_Worker__id", None)
     @id.setter
@@ -54,7 +77,15 @@ class Worker:
         if isinstance(value, (int, float)) and 0 <= value <= 5: self.__rating = float(value)
         else: raise ValueError("rating должен быть числом от 0 до 5")
 
+    # ====== методы информации ======
     def Info(self):
+        return {
+            "specialization": self.specialization,
+            "experience": self.experience,
+            "rating": self.rating
+        }
+
+    def Info_all(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -63,10 +94,62 @@ class Worker:
             "rating": self.rating
         }
 
+    # ====== CRUD ======
+    def Add_worker(self, file_db):
+        result = {"status": "error", "message": "Неизвестная ошибка"}
+        con = sqlite3.connect(file_db)
+        cursor = con.cursor()
+        try:
+            con.execute("BEGIN TRANSACTION")
+            cursor.execute("SELECT id FROM Workers WHERE user_id = ?", (self.user_id,))
+            existing_worker = cursor.fetchone()
+            if existing_worker:
+                cursor.execute("""UPDATE Workers SET specialization=?, experience=?, rating=? 
+                                  WHERE user_id=?""",
+                               (self.specialization, self.experience, self.rating, self.user_id))
+                self.id = existing_worker[0]
+            else:
+                cursor.execute("""INSERT INTO Workers (user_id, specialization, experience, rating) 
+                                  VALUES (?, ?, ?, ?)""",
+                               (self.user_id, self.specialization, self.experience, self.rating))
+                self.id = cursor.lastrowid
+            con.commit()
+            result["status"] = "success"
+            result["message"] = "Работник сохранён"
+            return result
+        except sqlite3.Error as e:
+            con.rollback()
+            result["message"] = f"Ошибка базы данных: {str(e)}"
+            return result
+        finally:
+            con.close()
+
+    def Remove_worker(self, file_db):
+        result = {"status": "error", "message": "Неизвестная ошибка"}
+        if not self.id:
+            result["message"] = "ID работника не задан"
+            return result
+        con = sqlite3.connect(file_db)
+        cursor = con.cursor()
+        try:
+            con.execute("BEGIN TRANSACTION")
+            cursor.execute("DELETE FROM Workers WHERE id = ?", (self.id,))
+            con.commit()
+            result["status"] = "success"
+            result["message"] = "Работник удалён"
+            return result
+        except sqlite3.Error as e:
+            con.rollback()
+            result["message"] = f"Ошибка базы данных: {str(e)}"
+            return result
+        finally:
+            con.close()
+
+    # ====== поиск ======
     @staticmethod
     def Find_worker_by_atr(attribute, value, file_db):
         try:
-            con = sqlite3.connect(f"{file_db}")
+            con = sqlite3.connect(file_db)
             cursor = con.cursor()
             match attribute:
                 case "id":
@@ -79,7 +162,8 @@ class Worker:
                     return None
             cursor.execute(query, (value,))
             row = cursor.fetchone()
-            if row is None: return None
+            if row is None:
+                return None
             worker_data = {
                 "id": row[0],
                 "user_id": row[1],
@@ -87,54 +171,18 @@ class Worker:
                 "experience": row[3],
                 "rating": row[4]
             }
-            return Worker(worker_data)
+            return Worker.db(worker_data)
         except sqlite3.Error as e:
             print(f"Ошибка при поиске работника: {e}")
             return None
         finally:
-            if 'con' in locals(): con.close()
+            con.close()
 
-    def Add_worker(self, file_db):
-        try:
-            con = sqlite3.connect(f"{file_db}")
-            cursor = con.cursor()
-            cursor.execute("SELECT id FROM Workers WHERE user_id = ?", (self.user_id,))
-            existing_worker = cursor.fetchone()
-            if existing_worker:
-                cursor.execute("""UPDATE Workers SET specialization = ?, experience = ?, rating = ? 
-                                  WHERE user_id = ?""",
-                               (self.specialization, self.experience, self.rating, self.user_id))
-            else:
-                cursor.execute("""INSERT INTO Workers (user_id, specialization, experience, rating) 
-                                  VALUES (?, ?, ?, ?)""",
-                               (self.user_id, self.specialization, self.experience, self.rating))
-            con.commit()
-            return True
-        except sqlite3.Error as e:
-            print(f"Ошибка при добавлении работника: {e}")
-            return False
-        finally:
-            if 'con' in locals(): con.close()
-
-    def Remove_worker(self, file_db):
-        try:
-            con = sqlite3.connect(f"{file_db}")
-            cursor = con.cursor()
-            if self.id is None: raise ValueError("Невозможно удалить: id не задан")
-            cursor.execute("DELETE FROM Workers WHERE id = ?", (self.id,))
-            con.commit()
-            return True
-        except sqlite3.Error as e:
-            print(f"Ошибка при удалении работника: {e}")
-            return False
-        finally:
-            if 'con' in locals(): con.close()
     @staticmethod
     def Get_all_workers_by_atr(attribute, value, file_db):
         try:
-            con = sqlite3.connect(f"{file_db}")
+            con = sqlite3.connect(file_db)
             cursor = con.cursor()
-
             match attribute:
                 case "specialization":
                     query = "SELECT id, user_id, specialization, experience, rating FROM Workers WHERE specialization = ?"
@@ -144,66 +192,46 @@ class Worker:
                     query = "SELECT id, user_id, specialization, experience, rating FROM Workers WHERE rating = ?"
                 case _:
                     return []
-
             cursor.execute(query, (value,))
             rows = cursor.fetchall()
-
-            workers = []
-            for row in rows:
-                worker_data = {
-                    "id": row[0],
-                    "user_id": row[1],
-                    "specialization": row[2],
-                    "experience": row[3],
-                    "rating": row[4]
-                }
-                workers.append(Worker(worker_data))
-
-            return workers
-
+            return [Worker.db({
+                "id": row[0],
+                "user_id": row[1],
+                "specialization": row[2],
+                "experience": row[3],
+                "rating": row[4]
+            }) for row in rows]
         except sqlite3.Error as e:
             print(f"Ошибка при получении работников: {e}")
             return []
-
         finally:
-            if 'con' in locals():
-                con.close()
+            con.close()
+
     @staticmethod
     def Remove_all_workers_by_atr(attribute, value, file_db):
+        result = {"status": "error", "message": "Неизвестная ошибка"}
         try:
             con = sqlite3.connect(file_db)
             cursor = con.cursor()
-
             match attribute:
                 case "specialization":
-                    check_query = "SELECT COUNT(*) FROM Workers WHERE specialization = ?"
                     delete_query = "DELETE FROM Workers WHERE specialization = ?"
                 case "user_id":
-                    check_query = "SELECT COUNT(*) FROM Workers WHERE user_id = ?"
                     delete_query = "DELETE FROM Workers WHERE user_id = ?"
                 case "rating":
-                    check_query = "SELECT COUNT(*) FROM Workers WHERE rating = ?"
                     delete_query = "DELETE FROM Workers WHERE rating = ?"
                 case _:
-                    raise ValueError("Недопустимый атрибут для удаления")
-
-            cursor.execute(check_query, (value,))
-            count = cursor.fetchone()[0]
-
-            if count == 0:
-                print("Работники с таким параметром не найдены")
-                return 0
-
+                    result["message"] = "Недопустимый атрибут для удаления"
+                    return result
             cursor.execute(delete_query, (value,))
+            deleted = cursor.rowcount
             con.commit()
-
-            return cursor.rowcount
-
-        except (sqlite3.Error, ValueError) as e:
-            print(f"Ошибка при удалении работников: {e}")
-            return 0
-
+            result["status"] = "success"
+            result["message"] = f"Удалено работников: {deleted}"
+            return result
+        except sqlite3.Error as e:
+            con.rollback()
+            result["message"] = f"Ошибка базы данных: {str(e)}"
+            return result
         finally:
-            if 'con' in locals():
-                con.close()
-
+            con.close()
